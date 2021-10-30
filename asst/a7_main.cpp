@@ -314,6 +314,6 @@ int main() {
   // testAutoStitchNCastle();
   clock_t end = clock();
   double duration = (end - start) * 1.0f / CLOCKS_PER_SEC;
-  cout << "a6_main.cpp runtime: " << duration << "s" << endl;
+  cout << "a7_main.cpp runtime: " << duration << "s" << endl;
   return 0;
 }
