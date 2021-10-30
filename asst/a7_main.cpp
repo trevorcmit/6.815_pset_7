@@ -280,9 +280,11 @@ void testAutoStitchNCastle() {
 
 // This is a way for you to test your functions.
 int main() {
-  cout << "nothing done in a7_main.cpp, but read me! There's some useful info "
-          "here."
-       << endl;
+  clock_t start = clock();
+
+  // cout << "nothing done in a7_main.cpp, but read me! There's some useful info "
+  //         "here."
+  //      << endl;
   // this sets the random number generator seed, without varying this value, all
   // runs should produce the same results (e.g. same sequence of "random"
   // number)
@@ -290,7 +292,7 @@ int main() {
   // this will set it to the current system time
   srand(0); // Fixed seed for deterministic results
 
-  // testComputeTensor();
+  testComputeTensor();
   // testCornerResponse();
   // testHarrisCorners();
   // testDescriptor();
@@ -310,4 +312,8 @@ int main() {
   // testPano2Planet();
   // testAutoStitchNBoston();
   // testAutoStitchNCastle();
+  clock_t end = clock();
+  double duration = (end - start) * 1.0f / CLOCKS_PER_SEC;
+  cout << "a6_main.cpp runtime: " << duration << "s" << endl;
+  return 0;
 }

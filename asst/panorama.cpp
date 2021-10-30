@@ -9,7 +9,19 @@ using namespace std;
 Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Compute xx/xy/yy Tensor of an image. (stored in that order)
-  return Image(1, 1, 1);
+  vector<Image> lumi_chromi = lumiChromi(im); // Get luminance/chrominance of input image
+  Image blur_lumi = gaussianBlur_separable(lumi_chromi.at(0), sigmaG); // Do 2D Gaussian Blue
+  Image blur_lumi_gradX = gradientX(blur_lumi), Image blur_lumi_gradY = gradientY(blur_lumi) // Gradients in each direction
+
+  Image tensor(im.width(), im.height(), im.channels());
+  for (int h = 0; h < im.height(); h++) {
+    for (int w = 0; w < im.width(); w++) {
+      tensor(w, h, 0) = pow(blur_lumi_gradX(w, h, 0), 2);
+      tensor(w, h, 1) = blur_lumi_gradX(w, h, 0) * blur_lumi_gradY(w, h, 0)
+      tensor(w, h, 2) = pow(blur_lumi_gradY(w, h, 0), 2);
+    }
+  }
+  return gaussianBlur_separable(tensor, sigmaG * factorSigma); // Apply weighting function as a Gaussian
 }
 
 Image cornerResponse(const Image &im, float k, float sigmaG,
