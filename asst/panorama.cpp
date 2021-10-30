@@ -13,12 +13,12 @@ Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
   Image blur_lumi = gaussianBlur_separable(lumi_chromi.at(0), sigmaG); // Do 2D Gaussian Blue
   Image blur_lumi_gradX = gradientX(blur_lumi), blur_lumi_gradY = gradientY(blur_lumi); // Gradients in each direction
 
-  Image tensor(im.width(), im.height(), im.channels());
+  Image tensor(im.width(), im.height(), im.channels()); // Setup output 3 channel image
   for (int h = 0; h < im.height(); h++) {
     for (int w = 0; w < im.width(); w++) {
-      tensor(w, h, 0) = pow(blur_lumi_gradX(w, h, 0), 2);
-      tensor(w, h, 1) = blur_lumi_gradX(w, h, 0) * blur_lumi_gradY(w, h, 0);
-      tensor(w, h, 2) = pow(blur_lumi_gradY(w, h, 0), 2);
+      tensor(w, h, 0) = pow(blur_lumi_gradX(w, h, 0), 2);                    // I_x^2
+      tensor(w, h, 1) = blur_lumi_gradX(w, h, 0) * blur_lumi_gradY(w, h, 0); // I_x * I_y
+      tensor(w, h, 2) = pow(blur_lumi_gradY(w, h, 0), 2);                    // I_y^2
     }
   }
   return gaussianBlur_separable(tensor, sigmaG * factorSigma); // Apply weighting function as a Gaussian
@@ -29,7 +29,14 @@ Image cornerResponse(const Image &im, float k, float sigmaG,
   // // --------- HANDOUT  PS07 ------------------------------
   // Compute response = det(M) - k*[(trace(M)^2)] at every pixel location,
   // using the structure tensor of im.
-  return Image(1, 1, 1);
+  Image t = computeTensor(im, sigmaG, factorSigma); // Compute tensor prior to calculating corner response
+  Image output(im.width(), im.height(), 1);     // Initialize 1 channel image
+  for (int h = 0; h < im.height(); h++) {
+    for (int w = 0; w < im.width(); w++) {      // Determinant minus k times trace squared
+      output(w, h, 0) = (t(w, h, 0) * t(w, h, 2) - pow(t(w, h, 1), 2)) - k * pow(t(w, h, 0) + t(w, h, 2), 2);
+    }
+  }
+  return output; // Return output with matrix calculations performed
 }
 
 vector<Point> HarrisCorners(const Image &im, float k, float sigmaG,

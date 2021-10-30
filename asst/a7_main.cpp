@@ -292,8 +292,9 @@ int main() {
   // this will set it to the current system time
   srand(0); // Fixed seed for deterministic results
 
-  testComputeTensor();
-  // testCornerResponse();
+  // testComputeTensor();
+  testCornerResponse();
+  
   // testHarrisCorners();
   // testDescriptor();
   // testComputeFeatures();
