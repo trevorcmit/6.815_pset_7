@@ -62,6 +62,12 @@ void testHarrisCorners() {
   Image stata1("./Input/stata-1.png");
   Image stata2("./Input/stata-2.png");
 
+  // Image h1 = HarrisCorners(stata1);
+  // Image h2 = HarrisCorners(stata1);
+
+  // h1.write("./Output/stata1-harris.png");
+  // h2.write("./Output/stata2-harris.png");
+
   // get harris corners
   vector<Point> h1 = HarrisCorners(stata1);
   vector<Point> h2 = HarrisCorners(stata2);
@@ -293,9 +299,9 @@ int main() {
   srand(0); // Fixed seed for deterministic results
 
   // testComputeTensor();
-  testCornerResponse();
-  
-  // testHarrisCorners();
+  // testCornerResponse();
+
+  testHarrisCorners();
   // testDescriptor();
   // testComputeFeatures();
   // testFindCorrespondences();

@@ -67,6 +67,7 @@ vector<Point> HarrisCorners(const Image &im, float k = 0.15f, float sigmaG = 1,
                             float factorSigma = 4, float maxiDiam = 7,
                             float boundarySize = 5);
 
+
 // Pset07: FeatureCorrespondences
 Image descriptor(const Image &blurredIm, const Point &p,
                  float radiusDescriptor = 4);

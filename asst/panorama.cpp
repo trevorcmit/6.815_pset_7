@@ -7,13 +7,13 @@
 using namespace std;
 
 Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
-  // // --------- HANDOUT  PS07 ------------------------------
+  // --------- HANDOUT  PS07 ------------------------------
   // Compute xx/xy/yy Tensor of an image. (stored in that order)
   vector<Image> lumi_chromi = lumiChromi(im); // Get luminance/chrominance of input image
   Image blur_lumi = gaussianBlur_separable(lumi_chromi.at(0), sigmaG); // Do 2D Gaussian Blue
   Image blur_lumi_gradX = gradientX(blur_lumi), blur_lumi_gradY = gradientY(blur_lumi); // Gradients in each direction
 
-  Image tensor(im.width(), im.height(), im.channels()); // Setup output 3 channel image
+  Image tensor(im.width(), im.height(), 3); // Setup output 3 channel image
   for (int h = 0; h < im.height(); h++) {
     for (int w = 0; w < im.width(); w++) {
       tensor(w, h, 0) = pow(blur_lumi_gradX(w, h, 0), 2);                    // I_x^2
@@ -24,37 +24,47 @@ Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
   return gaussianBlur_separable(tensor, sigmaG * factorSigma); // Apply weighting function as a Gaussian
 }
 
-Image cornerResponse(const Image &im, float k, float sigmaG,
-                     float factorSigma) {
-  // // --------- HANDOUT  PS07 ------------------------------
-  // Compute response = det(M) - k*[(trace(M)^2)] at every pixel location,
-  // using the structure tensor of im.
+
+Image cornerResponse(const Image &im, float k, float sigmaG, float factorSigma) {
+  // --------- HANDOUT  PS07 ------------------------------
+  // Compute response = det(M) - k*[(trace(M)^2)] at every pixel location, using the structure tensor of im.
   Image t = computeTensor(im, sigmaG, factorSigma); // Compute tensor prior to calculating corner response
-  Image output(im.width(), im.height(), 1);     // Initialize 1 channel image
+  Image output(im.width(), im.height(), 1);         // Initialize 1 channel image
   for (int h = 0; h < im.height(); h++) {
-    for (int w = 0; w < im.width(); w++) {      // Determinant minus k times trace squared
+    for (int w = 0; w < im.width(); w++) {          // Determinant minus k times trace squared
       output(w, h, 0) = (t(w, h, 0) * t(w, h, 2) - pow(t(w, h, 1), 2)) - k * pow(t(w, h, 0) + t(w, h, 2), 2);
     }
   }
   return output; // Return output with matrix calculations performed
 }
 
-vector<Point> HarrisCorners(const Image &im, float k, float sigmaG,
-                            float factorSigma, float maxiDiam,
-                            float boundarySize) {
-  // // --------- HANDOUT  PS07 ------------------------------
+
+vector<Point> HarrisCorners(const Image &im, float k, float sigmaG, float factorSigma, float maxiDiam, float boundarySize) {
+  // --------- HANDOUT  PS07 ------------------------------
   // Compute Harris Corners by maximum filtering the cornerResponse map.
   // The corners are the local maxima.
-  return vector<Point>();
+  Image response = cornerResponse(im, k, sigmaG, factorSigma); // Calculate corner response
+  Image max_filt = maximum_filter(response, maxiDiam);         // Max filter response to find local maxima values
+
+  vector<Point> corners;
+  for (int h = boundarySize; h < im.height() - boundarySize; h++) {  // Iterate over image inside boundary rectangle
+    for (int w = boundarySize; w < im.width() - boundarySize; w++) {
+      if ((response(w, h, 0) > 0.0f) && (max_filt(w, h, 0) == response(w, h, 0))) {
+				corners.push_back(Point(w, h)); // Only push if greater than zero and a local maxima
+			}
+    }
+  }
+  return corners; // Return vector of points
 }
 
-Image descriptor(const Image &blurredIm, const Point &p,
-                 float radiusDescriptor) {
+
+Image descriptor(const Image &blurredIm, const Point &p, float radiusDescriptor) {
   // --------- HANDOUT  PS07 ------------------------------
   // Extract a descriptor from blurredIm around point p, with a radius
   // 'radiusDescriptor'.
   return Image(1, 1, 1);
 }
+
 
 vector<Feature> computeFeatures(const Image &im, const vector<Point> &cornersL,
                                 float sigmaBlurDescriptor,
@@ -64,11 +74,13 @@ vector<Feature> computeFeatures(const Image &im, const vector<Point> &cornersL,
   return vector<Feature>();
 }
 
+
 float l2Features(const Feature &f1, const Feature &f2) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Compute the squared Euclidean distance between the descriptors of f1, f2.
   return 0.0f;
 }
+
 
 vector<FeatureCorrespondence>
 findCorrespondences(const vector<Feature> &listFeatures1,
@@ -90,15 +102,13 @@ vector<bool> inliers(const Matrix &H,
   return vector<bool>();
 }
 
-Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences,
-              int Niter, float epsilon) {
+Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences, int Niter, float epsilon) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Put together the RANSAC algorithm.
   return Matrix(3, 3);
 }
 
-Image autostitch(const Image &im1, const Image &im2, float blurDescriptor,
-                 float radiusDescriptor) {
+Image autostitch(const Image &im1, const Image &im2, float blurDescriptor, float radiusDescriptor) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Now you have all the ingredients to make great panoramas without using a
   // primitive javascript UI !
