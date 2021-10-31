@@ -300,10 +300,10 @@ int main() {
 
   // testComputeTensor();
   // testCornerResponse();
+  // testHarrisCorners();
 
-  testHarrisCorners();
-  // testDescriptor();
-  // testComputeFeatures();
+  testDescriptor();
+  testComputeFeatures();
   // testFindCorrespondences();
   // testRANSAC();
   // testVisualizeCorrespondenceInliers();

@@ -60,18 +60,37 @@ vector<Point> HarrisCorners(const Image &im, float k, float sigmaG, float factor
 
 Image descriptor(const Image &blurredIm, const Point &p, float radiusDescriptor) {
   // --------- HANDOUT  PS07 ------------------------------
-  // Extract a descriptor from blurredIm around point p, with a radius
-  // 'radiusDescriptor'.
-  return Image(1, 1, 1);
+  // Extract a descriptor from blurredIm around point p, with a radius 'radiusDescriptor'.
+  Image output(radiusDescriptor * 2 + 1, radiusDescriptor * 2 + 1, 1); // Initialize output image
+  int j = 0;
+  for (int h = p.y - radiusDescriptor; h <= p.y + radiusDescriptor; h++) {  // Iterate over image inside boundary rectangle
+    int i = 0;
+    for (int w = p.x - radiusDescriptor; w <= p.x + radiusDescriptor; w++) { 
+      output(i, j, 0) = blurredIm(w, h, 0);
+      i += 1; // Increase x index for output
+    }
+    j += 1; // Increase y for output
+  }
+  output = output - output.mean();       // Subtract mean
+  output = output / sqrt(output.var());  // Divide by standard deviation
+  return output;                         // Return offset/scaled image
 }
 
 
-vector<Feature> computeFeatures(const Image &im, const vector<Point> &cornersL,
-                                float sigmaBlurDescriptor,
+vector<Feature> computeFeatures(const Image &im, const vector<Point> &cornersL, float sigmaBlurDescriptor,
                                 float radiusDescriptor) {
-  // // --------- HANDOUT  PS07 ------------------------------
+  // --------- HANDOUT  PS07 ------------------------------
   // Pset07. obtain corner features from a list of corner points
-  return vector<Feature>();
+  vector<Image> lumi_chromi = lumiChromi(im); // Get luminance/chrominance of input image
+  Image blur_lumi = gaussianBlur_separable(lumi_chromi.at(0), sigmaBlurDescriptor); // Blur the luminance
+
+  vector<Feature> features;
+  for (int n = 0; n < cornersL.size(); n++) { // Iterate over all corners
+    features.push_back(
+      Feature(cornersL.at(n), descriptor(blur_lumi, cornersL.at(n), radiusDescriptor)) // Create feature for corner
+    );
+  }
+  return features; // Return vector of features, one for each corner
 }
 
 
