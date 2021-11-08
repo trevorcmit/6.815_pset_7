@@ -303,10 +303,9 @@ int main() {
   // testHarrisCorners();
   // testDescriptor();
   // testComputeFeatures();
+  // testFindCorrespondences();
 
-  testFindCorrespondences();
-
-  // testRANSAC();
+  testRANSAC();
   // testVisualizeCorrespondenceInliers();
   // testAutoStitch();
   // testAutoStitchBoston();

@@ -142,15 +142,28 @@ findCorrespondences(const vector<Feature> &listFeatures1, const vector<Feature> 
 vector<bool> inliers(const Matrix &H, const vector<FeatureCorrespondence> &listOfCorrespondences, float epsilon) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Pset07: Implement as part of RANSAC
-  // return a vector of bools the same size as listOfCorrespondences
-  // indicating whether each correspondance is an inlier according to the
-  // homography H and threshold epsilon
-  return vector<bool>();
+  // return a vector of bools the same size as listOfCorrespondences indicating whether each 
+  // correspondance is an inlier according to the homography H and threshold epsilon
+  vector<bool> output;                                                            // Initialize output
+  for (int n = 0; n < listOfCorrespondences.size(); n++) {
+    CorrespondencePair pair = listOfCorrespondences.at(n).toCorrespondencePair(); // Turn into correspondence pair
+    Vec3f transformed = H * pair.point1;                                          // Calculate Hp
+    Vec3f diff = transformed * pair.point2;                                       // Perform p' - Hp
+    output.push_back(diff.norm() < epsilon);                                      // Normalize and compare to epsilon
+  }
+  return output; // Return vector of bools
 }
 
 Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences, int Niter, float epsilon) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Put together the RANSAC algorithm.
+  Matrix output = Matrix::Identity(3, 3);
+
+  for (int n = 0; n < Niter; n++) {
+
+  }
+
+
   return Matrix(3, 3);
 }
 
