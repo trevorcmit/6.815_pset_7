@@ -301,10 +301,11 @@ int main() {
   // testComputeTensor();
   // testCornerResponse();
   // testHarrisCorners();
+  // testDescriptor();
+  // testComputeFeatures();
 
-  testDescriptor();
-  testComputeFeatures();
-  // testFindCorrespondences();
+  testFindCorrespondences();
+
   // testRANSAC();
   // testVisualizeCorrespondenceInliers();
   // testAutoStitch();

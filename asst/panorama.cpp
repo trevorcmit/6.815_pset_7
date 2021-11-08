@@ -61,7 +61,7 @@ vector<Point> HarrisCorners(const Image &im, float k, float sigmaG, float factor
 Image descriptor(const Image &blurredIm, const Point &p, float radiusDescriptor) {
   // --------- HANDOUT  PS07 ------------------------------
   // Extract a descriptor from blurredIm around point p, with a radius 'radiusDescriptor'.
-  Image output(radiusDescriptor * 2 + 1, radiusDescriptor * 2 + 1, 1); // Initialize output image
+  Image output(radiusDescriptor * 2 + 1, radiusDescriptor * 2 + 1, 1);      // Initialize output image
   int j = 0;
   for (int h = p.y - radiusDescriptor; h <= p.y + radiusDescriptor; h++) {  // Iterate over image inside boundary rectangle
     int i = 0;
@@ -77,8 +77,7 @@ Image descriptor(const Image &blurredIm, const Point &p, float radiusDescriptor)
 }
 
 
-vector<Feature> computeFeatures(const Image &im, const vector<Point> &cornersL, float sigmaBlurDescriptor,
-                                float radiusDescriptor) {
+vector<Feature> computeFeatures(const Image &im, const vector<Point> &cornersL, float sigmaBlurDescriptor, float radiusDescriptor) {
   // --------- HANDOUT  PS07 ------------------------------
   // Pset07. obtain corner features from a list of corner points
   vector<Image> lumi_chromi = lumiChromi(im); // Get luminance/chrominance of input image
@@ -97,22 +96,46 @@ vector<Feature> computeFeatures(const Image &im, const vector<Point> &cornersL, 
 float l2Features(const Feature &f1, const Feature &f2) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Compute the squared Euclidean distance between the descriptors of f1, f2.
-  return 0.0f;
+  return pow(f1.point().x - f2.point().x, 2) + pow(f1.point().y - f2.point().y, 2); // Squared distance
+
 }
 
 
 vector<FeatureCorrespondence>
-findCorrespondences(const vector<Feature> &listFeatures1,
-                    const vector<Feature> &listFeatures2, float threshold) {
+findCorrespondences(const vector<Feature> &listFeatures1, const vector<Feature> &listFeatures2, float threshold) {
   // // --------- HANDOUT  PS07 ------------------------------
-  // Find correspondences between listFeatures1 and listFeatures2 using the
-  // second-best test.
-  return vector<FeatureCorrespondence>();
+  // Find correspondences between listFeatures1 and listFeatures2 using the second-best test.
+  float sqr_thres = pow(threshold, 2);
+  vector<FeatureCorrespondence> output;
+
+  for (int n = 0; n < listFeatures1.size(); n++) {
+    int first_ind = 0, second_ind = 0;
+    float first_val = 0.0f, second_val = 0.0f;
+
+    for (int i = 0; i < listFeatures2.size(); i++) {
+      float temp = l2Features(listFeatures1.at(n), listFeatures2.at(i));
+      if (temp > first_val) {
+        second_val = first_val;
+        second_ind = first_ind;
+        first_val = temp;
+        first_ind = i;
+      }
+      else if (temp > second_val) {
+        second_val = temp;
+        second_ind = i;
+      }
+    }
+
+    if (second_val / first_val > sqr_thres) {
+      output.push_back(
+        FeatureCorrespondence(listFeatures1.at(n), listFeatures2.at(first_ind))
+      );
+    }
+  }
+  return output;
 }
 
-vector<bool> inliers(const Matrix &H,
-                     const vector<FeatureCorrespondence> &listOfCorrespondences,
-                     float epsilon) {
+vector<bool> inliers(const Matrix &H, const vector<FeatureCorrespondence> &listOfCorrespondences, float epsilon) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Pset07: Implement as part of RANSAC
   // return a vector of bools the same size as listOfCorrespondences
@@ -147,8 +170,7 @@ int countBoolVec(const vector<bool> &ins) { return 0; }
 // *****************************************************************************
 
 // Pset07 RANsac helper. re-shuffle a list of correspondances
-vector<FeatureCorrespondence> sampleFeatureCorrespondences(
-    vector<FeatureCorrespondence> listOfCorrespondences) {
+vector<FeatureCorrespondence> sampleFeatureCorrespondences(vector<FeatureCorrespondence> listOfCorrespondences) {
   random_shuffle(listOfCorrespondences.begin(), listOfCorrespondences.end());
   return listOfCorrespondences;
 }

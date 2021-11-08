@@ -38,9 +38,9 @@ public:
 class Feature {
 public:
   Feature(const Point &ptp, const Image &descp); // Constructor
-  const Point &point() const; // get point (this calls point cc)
-  const Image &desc() const;  // get Image (this maybe calls image cc)
-  void print() const;         // pretty printing
+  const Point &point() const;                    // get point (this calls point cc)
+  const Image &desc() const;                     // get Image (this maybe calls image cc)
+  void print() const;                            // pretty printing
 private:
   Point pt;
   Image dsc; // 9x9 descriptor
