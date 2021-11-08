@@ -139,6 +139,7 @@ findCorrespondences(const vector<Feature> &listFeatures1, const vector<Feature> 
   return output; // Return vector of FeatureCorrespondences
 }
 
+
 vector<bool> inliers(const Matrix &H, const vector<FeatureCorrespondence> &listOfCorrespondences, float epsilon) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Pset07: Implement as part of RANSAC
@@ -148,24 +149,44 @@ vector<bool> inliers(const Matrix &H, const vector<FeatureCorrespondence> &listO
   for (int n = 0; n < listOfCorrespondences.size(); n++) {
     CorrespondencePair pair = listOfCorrespondences.at(n).toCorrespondencePair(); // Turn into correspondence pair
     Vec3f transformed = H * pair.point1;                                          // Calculate Hp
-    Vec3f diff = transformed * pair.point2;                                       // Perform p' - Hp
+    Vec3f diff = pair.point2 - transformed;                                       // Compute p' - Hp
     output.push_back(diff.norm() < epsilon);                                      // Normalize and compare to epsilon
   }
   return output; // Return vector of bools
 }
 
+
 Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences, int Niter, float epsilon) {
   // // --------- HANDOUT  PS07 ------------------------------
   // Put together the RANSAC algorithm.
-  Matrix output = Matrix::Identity(3, 3);
+  int best = 0;                           // Initialize counter for number of most inliers
+  Matrix output = Matrix::Identity(3, 3); // Initialize output as 3x3 matrix
 
   for (int n = 0; n < Niter; n++) {
+    vector<FeatureCorrespondence> random_fc = sampleFeatureCorrespondences(listOfCorrespondences);    // random sample
+    vector<FeatureCorrespondence> four_fc = {random_fc[0], random_fc[1], random_fc[2], random_fc[3]}; // take first four fc's
+    vector<CorrespondencePair> four_cp = getListOfPairs(four_fc);                 // use list of pairs method to convert type
+    CorrespondencePair cps[4] = {four_cp[0], four_cp[1], four_cp[2], four_cp[3]}; // Convert to homography input format
 
+    Matrix H = computeHomography(cps);
+
+    if (H.determinant() == 0) {H = Matrix::Identity(3, 3);} // Check for singular linear system as pset describes
+
+    vector<bool> in_bools = inliers(H, four_fc, epsilon);   // Use inliers helper
+    int count = 0;
+    for (int i = 0; i < in_bools.size(); i++) {             // Iterate over all bools and count # of True
+      if (in_bools.at(i)) {count += 1;}
+    }
+
+    if (count > best) { // Check if current iteration is the best
+      best = count;     // Set best counter to current count
+      output = H;       // Save current homography matrix
+    }
   }
 
-
-  return Matrix(3, 3);
+  return output; // Return output 3x3 matrix
 }
+
 
 Image autostitch(const Image &im1, const Image &im2, float blurDescriptor, float radiusDescriptor) {
   // // --------- HANDOUT  PS07 ------------------------------
@@ -173,6 +194,7 @@ Image autostitch(const Image &im1, const Image &im2, float blurDescriptor, float
   // primitive javascript UI !
   return Image(1, 1, 1);
 }
+
 
 // *****************************************************************************
 //  * Helpful optional functions to implement
@@ -460,6 +482,5 @@ void FeatureCorrespondence::print() const {
 }
 
 CorrespondencePair FeatureCorrespondence::toCorrespondencePair() const {
-  return CorrespondencePair((float)f0.point().x, (float)f0.point().y, 1,
-                            (float)f1.point().x, (float)f1.point().y, 1);
+  return CorrespondencePair((float)f0.point().x, (float)f0.point().y, 1, (float)f1.point().x, (float)f1.point().y, 1);
 }
