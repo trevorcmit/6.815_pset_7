@@ -304,8 +304,8 @@ int main() {
   // testDescriptor();
   // testComputeFeatures();
   // testFindCorrespondences();
-
   testRANSAC();
+
   // testVisualizeCorrespondenceInliers();
   // testAutoStitch();
   // testAutoStitchBoston();

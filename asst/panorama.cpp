@@ -148,9 +148,14 @@ vector<bool> inliers(const Matrix &H, const vector<FeatureCorrespondence> &listO
   vector<bool> output;                                                            // Initialize output
   for (int n = 0; n < listOfCorrespondences.size(); n++) {
     CorrespondencePair pair = listOfCorrespondences.at(n).toCorrespondencePair(); // Turn into correspondence pair
-    Vec3f transformed = H * pair.point1;                                          // Calculate Hp
-    Vec3f diff = pair.point2 - transformed;                                       // Compute p' - Hp
-    output.push_back(diff.norm() < epsilon);                                      // Normalize and compare to epsilon
+    Vec3f trnfrm = H * pair.point1;                                          // Calculate Hp
+
+    float dist = sqrt(
+      pow(pair.point2.x()/pair.point2.z() - trnfrm.x()/trnfrm.z(), 2.0f) +   // Perform normalization during the 
+      pow(pair.point2.y()/pair.point2.z() - trnfrm.y()/trnfrm.z(), 2.0f)     // p' - Hp step
+    );
+
+    output.push_back(dist < epsilon);                                       // Normalize and compare to epsilon
   }
   return output; // Return vector of bools
 }
@@ -170,7 +175,7 @@ Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences, int Ni
 
     Matrix H = computeHomography(cps);
 
-    if ((int)H.determinant() == 0) {
+    if ((int) H.determinant() == 0) {
       cout << "Determinant of zero" << endl;
       H = Matrix::Identity(3, 3);
     } // Check for singular linear system as pset describes
@@ -193,27 +198,26 @@ Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences, int Ni
 
 Image autostitch(const Image &im1, const Image &im2, float blurDescriptor, float radiusDescriptor) {
   // // --------- HANDOUT  PS07 ------------------------------
-  // Now you have all the ingredients to make great panoramas without using a primitive javascript UI !
-  Matrix H = RANSAC(
-    findCorrespondences(
+  Matrix H = RANSAC(                                              // Run RANSAC on image correspondences
+    findCorrespondences(                                          // Create correspondences for both images
       computeFeatures(
-        im1, HarrisCorners(im1), blurDescriptor, radiusDescriptor
+        im1, HarrisCorners(im1), blurDescriptor, radiusDescriptor // Make image 1 features
       ), 
       computeFeatures(
-        im2, HarrisCorners(im2), blurDescriptor, radiusDescriptor
+        im2, HarrisCorners(im2), blurDescriptor, radiusDescriptor // Make image 2 features
       )
     )
   );
 
-  BoundingBox b = bboxUnion(
+  BoundingBox b = bboxUnion( // Calculate bounding boxes for both images, H applied to image 1
     computeTransformedBBox(im1.width(), im1.height(), H), 
     computeTransformedBBox(im2.width(), im2.height(), Matrix::Identity(3, 3))
   );
-  Matrix t = makeTranslation(b);
+  Matrix t = makeTranslation(b);                          // Translate bounding box
 
-  Image output(b.x2 - b.x1, b.y2 - b.y1, im1.channels());    
+  Image output(b.x2 - b.x1, b.y2 - b.y1, im1.channels()); // Create stitch-sized output image
   applyHomographyFast(im2, t, output, true);
-  applyHomographyFast(im1, t * H, output, true);
+  applyHomographyFast(im1, t * H, output, true);          // Apply both homographies to output image
 
   return output; // Return output image with homography applied
 }

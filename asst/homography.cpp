@@ -35,6 +35,7 @@ void applyHomography(const Image &source, const Matrix &H, Image &out, bool bili
       }
     }
   }
+  
 }
 
 Matrix computeHomography(const CorrespondencePair correspondences[4]) {
