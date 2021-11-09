@@ -170,7 +170,10 @@ Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences, int Ni
 
     Matrix H = computeHomography(cps);
 
-    if (H.determinant() == 0) {H = Matrix::Identity(3, 3);} // Check for singular linear system as pset describes
+    if ((int)H.determinant() == 0) {
+      cout << "Determinant of zero" << endl;
+      H = Matrix::Identity(3, 3);
+    } // Check for singular linear system as pset describes
 
     vector<bool> in_bools = inliers(H, four_fc, epsilon);   // Use inliers helper
     int count = 0;
@@ -178,9 +181,9 @@ Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences, int Ni
       if (in_bools.at(i)) {count += 1;}
     }
 
-    if (count > best) { // Check if current iteration is the best
-      best = count;     // Set best counter to current count
-      output = H;       // Save current homography matrix
+    if (count > best) {  // Check if current iteration is the best
+      best = count;      // Set best counter to current count
+      output = H;        // Save current homography matrix
     }
   }
 
@@ -190,9 +193,29 @@ Matrix RANSAC(const vector<FeatureCorrespondence> &listOfCorrespondences, int Ni
 
 Image autostitch(const Image &im1, const Image &im2, float blurDescriptor, float radiusDescriptor) {
   // // --------- HANDOUT  PS07 ------------------------------
-  // Now you have all the ingredients to make great panoramas without using a
-  // primitive javascript UI !
-  return Image(1, 1, 1);
+  // Now you have all the ingredients to make great panoramas without using a primitive javascript UI !
+  Matrix H = RANSAC(
+    findCorrespondences(
+      computeFeatures(
+        im1, HarrisCorners(im1), blurDescriptor, radiusDescriptor
+      ), 
+      computeFeatures(
+        im2, HarrisCorners(im2), blurDescriptor, radiusDescriptor
+      )
+    )
+  );
+
+  BoundingBox b = bboxUnion(
+    computeTransformedBBox(im1.width(), im1.height(), H), 
+    computeTransformedBBox(im2.width(), im2.height(), Matrix::Identity(3, 3))
+  );
+  Matrix t = makeTranslation(b);
+
+  Image output(b.x2 - b.x1, b.y2 - b.y1, im1.channels());    
+  applyHomographyFast(im2, t, output, true);
+  applyHomographyFast(im1, t * H, output, true);
+
+  return output; // Return output image with homography applied
 }
 
 
