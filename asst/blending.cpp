@@ -101,61 +101,78 @@ Image stitchBlending(const Image &im1, const Image &im2, const Matrix &H, BlendT
   Image output(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, im2.channels()); // Create output
   output.set_color(); // Set to black so pixels can be adjusted by applyHomography
 
-  if (blend == BlendType::BLEND_NONE) {
+  if (blend == BlendType::BLEND_NONE) { // BLEND_NONE case
     applyHomography(im1, translate * H, output, true); // translation and homography on image 1
     applyHomography(im2, translate, output, true);     // solely translation on image 2
     return output;
   }
 
-  else if (blend == BlendType::BLEND_LINEAR) {
-    // Image we1 = blendingweight(im1.width(), im1.height());
-    // Image we2 = blendingweight(im2.width(), im2.height());
-    Image smooth1 = blendingweight(im1.width(), im1.height());
+  else if (blend == BlendType::BLEND_LINEAR) { // BLEND_LINEAR case
+    Image smooth1 = blendingweight(im1.width(), im1.height()); // Create weight images for both inputs
     Image smooth2 = blendingweight(im2.width(), im2.height());
-    Image ones1(im1.width(), im1.height());
-    Image ones2(im2.width(), im2.height());
-    ones1.set_color(1.0f);
-    ones2.set_color(1.0f);
-    Image low_weight(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1);
-    applyhomographyBlend(smooth1, ones1, low_weight, H);
-    applyhomographyBlend(smooth2, ones2, low_weight, H);
-    Image image1 = im1 / low_weight.max();
-    Image image2 = im2 / low_weight.max();
 
-    applyhomographyBlend(image1, smooth1, output, translate * H, true); // translation and homography on image 1
-    applyhomographyBlend(image2, smooth2, output, translate, true);     // solely translation on image 2
-    return output;
+    Image im_1(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, im1.channels()); // Create two stitch-sized
+    Image im_2(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, im2.channels()); // images with only original images
+    im_1.set_color(0.0f);
+    im_2.set_color(0.0f);
+    applyHomography(im1, translate * H, im_1, true);
+    applyHomography(im2, translate, im_2, true);   
+
+    Image weight1(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1); // Create two stitch-sized
+    Image weight2(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1); // images with only weights
+    weight1.set_color(0.0f);
+    weight2.set_color(0.0f);
+    applyHomography(smooth1, translate * H, weight1, true);
+    applyHomography(smooth2, translate, weight2, true);
+
+    for (int h = 0; h < output.height(); h++) {   // Iterate over all pixels to generate high frequency
+      for (int w = 0; w < output.width(); w++) { 
+        for (int c = 0; c < output.channels(); c++) { // Iterate over all channels and apply normalization
+          output(w, h, c) = (im_1(w, h, c) * weight1(w, h) + im_2(w, h, c) * weight2(w, h)) / (weight1(w, h) + weight2(w, h));
+        }
+      }
+    }
+    return output; // Return final output blended linearly and normalized
   }
 
   else { // BLEND_2LAYER case
-    Image low1 = gaussianBlur_separable(im1, 2.0), low2 = gaussianBlur_separable(im2, 2.0);
-    Image high1 = im1 - low1, high2 = im2 - low2;
-
+    Image low1 = gaussianBlur_separable(im1, 2.0); // Gaussian blur to get low frequencies of each image
+    Image low2 = gaussianBlur_separable(im2, 2.0);
+    Image high1 = im1 - low1;                      // Get difference with gaussian blur for high frequencies
+    Image high2 = im2 - low2;
 
     // *********************************
     // ********* LOW FREQUENCY *********
     // *********************************
-    Image smooth1 = blendingweight(im1.width(), im1.height());
+    Image smooth1 = blendingweight(im1.width(), im1.height()); // Create weight images for both inputs
     Image smooth2 = blendingweight(im2.width(), im2.height());
-    Image ones1(im1.width(), im1.height());
-    Image ones2(im2.width(), im2.height());
-    ones1.set_color(1.0f);
-    ones2.set_color(1.0f);
-    Image low_weight(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1);
-    applyhomographyBlend(smooth1, ones1, low_weight, H);
-    applyhomographyBlend(smooth2, ones2, low_weight, H);
 
+    Image im_low1(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, im1.channels()); // Create two stitch-sized images
+    Image im_low2(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, im2.channels()); // with only LOW FREQUENCY images
+    im_low1.set_color(0.0f);
+    im_low2.set_color(0.0f);
+    applyHomography(low1, translate * H, im_low1, true);
+    applyHomography(low2, translate, im_low2, true);   
+
+    Image weight1(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1); // Create two stitch-sized
+    Image weight2(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1); // images with only weights
+    weight1.set_color(0.0f);
+    weight2.set_color(0.0f);
+    applyHomography(smooth1, translate * H, weight1, true);
+    applyHomography(smooth2, translate, weight2, true);
 
     // **********************************
     // ********* HIGH FREQUENCY *********
     // **********************************
-    Image high_freq(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1);   // Initialize high frequency output image
-    Image high_weight(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1); // Initialize high frequency weights
-    high_freq.set_color(0.0f);
+    Image high_freq(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, im1.channels());   // Initialize high frequency output image
+    Image high_weight(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1);              // Initialize high frequency weights
+    high_freq.set_color(0.0f, 0.0f, 0.0f);
     high_weight.set_color(0.0f);
 
-    Image im_high1(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1); // Create two stitch-sized images with only original images
-    Image im_high2(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, 1);
+    Image im_high1(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, im1.channels()); // Create two stitch-sized 
+    Image im_high2(bbox.x2 - bbox.x1, bbox.y2 - bbox.y1, im2.channels()); // images with only original images
+    im_high1.set_color(0.0f, 0.0f, 0.0f);
+    im_high2.set_color(0.0f, 0.0f, 0.0f);
     applyHomography(high1, translate * H, im_high1, true); 
     applyHomography(high2, translate, im_high2, true);     
 
@@ -188,6 +205,8 @@ Image stitchBlending(const Image &im1, const Image &im2, const Matrix &H, BlendT
         }
       }
     }
+
+    return high_freq;
 
     // Image weight_sum = low_weight + high_weight;
 
