@@ -3,6 +3,7 @@
         "iostream": "cpp",
         "vector": "cpp",
         "cmath": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "xlocale": "cpp"
     }
 }

@@ -304,7 +304,7 @@ int main() {
   // testDescriptor();
   // testComputeFeatures();
   // testFindCorrespondences();
-  testRANSAC();
+  // testRANSAC();
 
   // testVisualizeCorrespondenceInliers();
   // testAutoStitch();
@@ -312,13 +312,14 @@ int main() {
 
   // testBlendingWeight();
   // testApplyHomographyBlend();
-  // testStitchBlendStata();
+  testStitchBlendStata();
   // testAutoStitchBlendStata();
   // testAutoStitchBlendBoston();
   // testAutoStitchBlendCastle();
   // testPano2Planet();
   // testAutoStitchNBoston();
   // testAutoStitchNCastle();
+  
   clock_t end = clock();
   double duration = (end - start) * 1.0f / CLOCKS_PER_SEC;
   cout << "a7_main.cpp runtime: " << duration << "s" << endl;
